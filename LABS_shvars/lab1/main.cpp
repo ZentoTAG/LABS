@@ -4,151 +4,137 @@
 using namespace std;
 
 const int n = 3;
-const double eps = 0.0001;
+const int m = n + 1;
+const double EPS = 0.0001;
 
-// Вывод расширенной матрицы
-void printMatrix(double a[n][n+1]) {
+// Пересчёт индексов (i, j) в одномерный массив
+int idx(int i, int j) {
+    return i * m + j;
+}
+
+void printMatrix(const double a[]) {
     for (int i = 0; i < n; i++) {
         cout << "| ";
-        for (int j = 0; j <= n; j++) {
-            cout << setw(9) << setprecision(4) << fixed << a[i][j] << " ";
-        }
+        for (int j = 0; j < m; j++)
+            cout << setw(10) << setprecision(4) << fixed << a[idx(i, j)] << " ";
         cout << "|" << endl;
     }
     cout << endl;
 }
 
-// Метод Гаусса с выбором главного элемента
-void gauss(double a[n][n+1], double x[n]) {
-    cout << "==================================================" << endl;
-    cout << "МЕТОД ГАУССА С ВЫБОРОМ ГЛАВНОГО ЭЛЕМЕНТА" << endl;
-    cout << "==================================================" << endl << endl;
-
-    cout << "Исходная расширенная матрица:" << endl;
+// Метод Гаусса с выбором главного элемента и нормированием
+// Метод Гаусса с выбором главного элемента и нормированием
+void gaussJordan(double a[], double x[]) {
+    cout << "=== МЕТОД ГАУССА С ВЫБОРОМ ГЛАВНОГО ЭЛЕМЕНТА И НОРМИРОВАНИЕМ ===\n\n";
+    cout << "Исходная расширенная матрица:\n";
     printMatrix(a);
 
     for (int k = 0; k < n; k++) {
-        cout << "--- Шаг " << k+1 << " ---" << endl;
+        cout << "--- Шаг " << k + 1 << " ---\n";
 
-        // Поиск главного элемента в столбце k
+        // Поиск главного элемента
+        cout << "Ищем главный элемент в столбце " << k + 1 << ".\n";
         int maxRow = k;
-        double maxVal = fabs(a[k][k]);
-        for (int i = k+1; i < n; i++) {
-            if (fabs(a[i][k]) > maxVal) {
-                maxVal = fabs(a[i][k]);
+        for (int i = k + 1; i < n; i++)
+            if (fabs(a[idx(i, k)]) > fabs(a[idx(maxRow, k)]))
                 maxRow = i;
-            }
-        }
 
-        cout << "Главный элемент в столбце " << k+1 << ": ";
-        cout << "a[" << maxRow+1 << "][" << k+1 << "] = " << a[maxRow][k] << endl;
+        cout << "Максимальный по модулю: a[" << maxRow + 1 << "][" << k + 1
+             << "] = " << a[idx(maxRow, k)] << "\n";
 
-        // Перестановка строк
+        // Перестановка
         if (maxRow != k) {
-            for (int j = 0; j <= n; j++) {
-                swap(a[k][j], a[maxRow][j]);
-            }
-            cout << "Перестановка строк " << k+1 << " и " << maxRow+1 << ":" << endl;
+            cout << "Переставляем строки " << k + 1 << " и " << maxRow + 1 << ":\n";
+            for (int j = 0; j < m; j++)
+                swap(a[idx(k, j)], a[idx(maxRow, j)]);
             printMatrix(a);
         } else {
-            cout << "Перестановка не требуется." << endl;
+            cout << "Перестановка не требуется.\n\n";
         }
 
-        // Обнуление элементов ниже диагонали
-        for (int i = k+1; i < n; i++) {
-            double factor = a[i][k] / a[k][k];
-            cout << "Множитель для строки " << i+1 << ": m = " << factor << endl;
-            for (int j = k; j <= n; j++) {
-                a[i][j] -= factor * a[k][j];
-            }
-        }
+        // Нормирование
+        double pivot = a[idx(k, k)];
+        cout << "Нормируем строку " << k + 1
+             << ": делим все элементы на " << pivot
+             << " (a[" << k + 1 << "][" << k + 1 << "])\n";
+        for (int j = 0; j < m; j++)
+            a[idx(k, j)] /= pivot;
+        printMatrix(a);
 
-        cout << "После обнуления столбца " << k+1 << ":" << endl;
+        // Обнуление
+        cout << "Обнуляем столбец " << k + 1 << " в остальных строках.\n";
+        for (int i = 0; i < n; i++) {
+            if (i == k) continue;
+            double factor = a[idx(i, k)];
+            cout << "Для строки " << i + 1 << ": множитель = " << factor
+                 << ", вычитаем " << factor << " * строку " << k + 1 << "\n";
+            for (int j = 0; j < m; j++)
+                a[idx(i, j)] -= factor * a[idx(k, j)];
+        }
         printMatrix(a);
     }
 
-    // Обратный ход
-    cout << "--- Обратный ход ---" << endl;
-    for (int i = n-1; i >= 0; i--) {
-        x[i] = a[i][n];
-        for (int j = i+1; j < n; j++) {
-            x[i] -= a[i][j] * x[j];
-        }
-        x[i] /= a[i][i];
-        cout << "x" << i+1 << " = " << x[i] << endl;
-    }
-
-    cout << endl << "Решение методом Гаусса:" << endl;
-    for (int i = 0; i < n; i++) {
-        cout << "x" << i+1 << " = " << x[i] << endl;
-    }
-    cout << endl;
+    for (int i = 0; i < n; i++)
+        x[i] = a[idx(i, n)];
 }
 
 // Метод Зейделя
-void seidel(double a[n][n+1], double x[n], double eps) {
-    cout << "==================================================" << endl;
-    cout << "МЕТОД ЗЕЙДЕЛЯ" << endl;
-    cout << "==================================================" << endl << endl;
+void seidel(const double a[], double x[], double eps) {
+    cout << "=== МЕТОД ЗЕЙДЕЛЯ ===\n\n";
+    cout << "Система, приведённая к виду с диагональным преобладанием:\n";
+    printMatrix(a);
 
-    double C[n][n], d[n];
-
-    // Приведение к виду x = Cx + d
-    cout << "Приведение к виду x = Cx + d:" << endl;
-    for (int i = 0; i < n; i++) {
-        d[i] = a[i][n] / a[i][i];
-        cout << "d" << i+1 << " = " << a[i][n] << " / " << a[i][i] << " = " << d[i] << endl;
-        for (int j = 0; j < n; j++) {
-            if (i != j) {
-                C[i][j] = -a[i][j] / a[i][i];
-            } else {
-                C[i][j] = 0;
-            }
-        }
-    }
-    cout << endl;
-
-    cout << "Матрица C:" << endl;
-    for (int i = 0; i < n; i++) {
-        cout << "| ";
-        for (int j = 0; j < n; j++) {
-            cout << setw(9) << setprecision(4) << fixed << C[i][j] << " ";
-        }
-        cout << "|" << endl;
-    }
-    cout << endl;
-
-    cout << "Вектор d:" << endl;
-    for (int i = 0; i < n; i++) {
-        cout << "d" << i+1 << " = " << d[i] << endl;
-    }
-    cout << endl;
-
-    // Проверка нормы
+    // --- Проверка условия сходимости ---
+    cout << "Проверка условия сходимости ||C||_inf < 1:\n";
     double norm = 0;
     for (int i = 0; i < n; i++) {
         double sum = 0;
+        cout << "  Строка " << i + 1 << ": ";
         for (int j = 0; j < n; j++) {
-            sum += fabs(C[i][j]);
+            if (i == j) continue;
+            double c = fabs(a[idx(i, j)] / a[idx(i, i)]);
+            sum += c;
+            cout << "|a" << i + 1 << j + 1 << "/a" << i + 1 << i + 1 << "|";
+            if (j < n - 1) cout << " + ";
         }
-        cout << "Сумма модулей в строке " << i+1 << ": " << sum << endl;
+        cout << " = " << sum << "\n";
         if (sum > norm) norm = sum;
     }
-    cout << "Норма ||C||_inf = " << norm << endl;
-    if (norm >= 1) {
-        cout << "ВНИМАНИЕ: условие сходимости не выполнено!" << endl;
-    } else {
-        cout << "Условие сходимости выполнено." << endl;
+    cout << "Норма ||C||_inf = " << norm;
+    if (norm < 1)
+        cout << " < 1 — условие сходимости выполнено.\n\n";
+    else
+        cout << " >= 1 — условие сходимости НЕ выполнено!\n\n";
+
+    // --- Приведение к виду x = Cx + d ---
+    cout << "Приведение к виду x = Cx + d:\n";
+    for (int i = 0; i < n; i++) {
+        cout << "  x" << i + 1 << " = ";
+        bool first = true;
+        for (int j = 0; j < n; j++) {
+            if (i == j) continue;
+            double c = -a[idx(i, j)] / a[idx(i, i)];
+            if (!first) cout << (c >= 0 ? " + " : " - ");
+            else if (c < 0) cout << "-";
+            cout << fabs(c) << "*x" << j + 1;
+            first = false;
+        }
+        double d = a[idx(i, n)] / a[idx(i, i)];
+        cout << (d >= 0 ? " + " : " - ") << fabs(d) << "\n";
     }
-    cout << endl;
+    cout << "\n";
 
-    // Начальное приближение
+    // --- Начальное приближение ---
     for (int i = 0; i < n; i++) x[i] = 0;
-    cout << "Начальное приближение: x = (0, 0, 0)" << endl << endl;
+    cout << "Начальное приближение: x = (0, 0, 0)\n\n";
 
-    cout << "Итерации:" << endl;
-    cout << setw(5) << "k" << setw(12) << "x1" << setw(12) << "x2" << setw(12) << "x3" << setw(15) << "погрешность" << endl;
-    cout << string(56, '-') << endl;
+    cout << "Итерации:\n";
+    cout << setw(4)  << "k"
+         << setw(14) << "x1"
+         << setw(14) << "x2"
+         << setw(14) << "x3"
+         << setw(16) << " погрешность" << endl;
+    cout << string(62, '-') << endl;
 
     int iter = 0;
     double error;
@@ -156,63 +142,77 @@ void seidel(double a[n][n+1], double x[n], double eps) {
         double x_old[n];
         for (int i = 0; i < n; i++) x_old[i] = x[i];
 
+        cout << "\nИтерация " << iter + 1 << ":\n";
+
         for (int i = 0; i < n; i++) {
-            double sum = d[i];
+            double sum = a[idx(i, n)] / a[idx(i, i)];
+            cout << "  x" << i + 1 << " = " << a[idx(i, n)] << "/"
+                 << a[idx(i, i)];
+
             for (int j = 0; j < n; j++) {
-                if (j < i) sum += C[i][j] * x[j];      // новые значения
-                else if (j > i) sum += C[i][j] * x_old[j]; // старые значения
+                if (i == j) continue;
+                double c = -a[idx(i, j)] / a[idx(i, i)];
+                double val = (j < i) ? x[j] : x_old[j]; // новые или старые
+                cout << (c >= 0 ? " + " : " - ")
+                     << fabs(c) << "*" << val;
+                sum += c * val;
             }
             x[i] = sum;
+            cout << " = " << x[i] << "\n";
         }
 
         iter++;
         error = 0;
-        for (int i = 0; i < n; i++) {
-            error += fabs(x[i] - x_old[i]);
-        }
+        for (int i = 0; i < n; i++) error += fabs(x[i] - x_old[i]);
 
-        cout << setw(5) << iter;
+        cout << "  Погрешность: ";
         for (int i = 0; i < n; i++) {
-            cout << setw(12) << setprecision(6) << fixed << x[i];
+            cout << "|x" << i + 1 << " - x" << i + 1 << "_old|";
+            if (i < n - 1) cout << " + ";
         }
-        cout << setw(15) << setprecision(6) << error << endl;
-    } while (error > eps);
+        cout << " = " << error << "\n";
 
-    cout << endl << "Решение методом Зейделя:" << endl;
-    for (int i = 0; i < n; i++) {
-        cout << "x" << i+1 << " = " << x[i] << endl;
-    }
-    cout << endl;
+        cout << setw(4)  << iter;
+        for (int i = 0; i < n; i++)
+            cout << setw(14) << setprecision(6) << fixed << x[i];
+        cout << setw(16) << setprecision(6) << fixed << error << endl;
+
+        if (error <= eps) {
+            cout << "\nПогрешность " << error << " <= " << eps
+                 << " — итерации завершены.\n";
+            break;
+        }
+    } while (true);
 }
-
 int main() {
-    // Исходная система (вариант 26)
-    double a[n][n+1] = {
-        {0.9, 2.7, -3.8, 2.4},
-        {2.5, 5.8, -0.5, 3.5},
-        {4.5, -2.1, 3.2, -1.2}
-    };
-
-    double x[n];
-
-    // Метод Гаусса
-    double a_gauss[n][n+1];
+    double a[n * m];
+    cout << "Введите матрицу " << n << "x" << m << ":" << endl;
     for (int i = 0; i < n; i++)
-        for (int j = 0; j <= n; j++)
-            a_gauss[i][j] = a[i][j];
-    gauss(a_gauss, x);
+        for (int j = 0; j < m; j++)
+            cin >> a[idx(i, j)];
 
-    // Метод Зейделя (с преобразованием для сходимости)
-    // Преобразованная система:
-    // 7.0x1 + 3.7x2 + 2.7x3 = 2.3
-    // 3.4x1 + 8.5x2 - 4.3x3 = 5.9
-    // 0.9x1 + 2.7x2 - 3.8x3 = 2.4
-    double a_seidel[n][n+1] = {
-        {7.0, 3.7, 2.7, 2.3},
-        {3.4, 8.5, -4.3, 5.9},
-        {0.9, 2.7, -3.8, 2.4}
-    };
-    seidel(a_seidel, x, eps);
+    double a1[n * m], a2[n * m];
+    for (int i = 0; i < n * m; i++) a1[i] = a2[i] = a[i];
+
+    double x1[n], x2[n];
+    gaussJordan(a1, x1);
+
+    cout << "Решение (Гаусс): ";
+    for (int i = 0; i < n; i++) cout << x1[i] << " ";
+    cout << endl;
+
+    // Преобразование системы для сходимости Зейделя
+    for (int j = 0; j < m; j++) {
+        a2[idx(0, j)] = a[idx(1, j)] + a[idx(2, j)];
+        a2[idx(1, j)] = a[idx(0, j)] + a[idx(1, j)];
+        a2[idx(2, j)] = a[idx(0, j)];
+    }
+
+    seidel(a2, x2, EPS);
+
+    cout << "Решение (Зейдель): ";
+    for (int i = 0; i < n; i++) cout << x2[i] << " ";
+    cout << endl;
 
     return 0;
 }
