@@ -1,3 +1,4 @@
+#include <fstream>
 #include <iostream>
 #include <iomanip>
 #include <cmath>
@@ -22,34 +23,59 @@ void printMatrix(const double a[]) {
     cout << endl;
 }
 
-// Метод Гаусса с выбором главного элемента и нормированием
-// Метод Гаусса с выбором главного элемента и нормированием
-void gaussJordan(double a[], double x[]) {
-    cout << "=== МЕТОД ГАУССА С ВЫБОРОМ ГЛАВНОГО ЭЛЕМЕНТА И НОРМИРОВАНИЕМ ===\n\n";
+// Метод Гаусса с выбором главного элемента по всей матрице
+// и перестановкой столбцов
+void gauss(double a[], double x[]) {
+    cout << "=== МЕТОД ГАУССА С ВЫБОРОМ ГЛАВНОГО ЭЛЕМЕНТА ===\n";
+    cout << "=== (С ПЕРЕСТАНОВКОЙ СТРОК И СТОЛБЦОВ) ===\n\n";
     cout << "Исходная расширенная матрица:\n";
     printMatrix(a);
+
+    // Массив для отслеживания перестановок столбцов.
+    // colOrder[j] = номер исходного неизвестного, которое сейчас в столбце j.
+    int colOrder[n];
+    for (int j = 0; j < n; j++) colOrder[j] = j;
 
     for (int k = 0; k < n; k++) {
         cout << "--- Шаг " << k + 1 << " ---\n";
 
-        // Поиск главного элемента
-        cout << "Ищем главный элемент в столбце " << k + 1 << ".\n";
-        int maxRow = k;
-        for (int i = k + 1; i < n; i++)
-            if (fabs(a[idx(i, k)]) > fabs(a[idx(maxRow, k)]))
-                maxRow = i;
+        // Поиск главного элемента по ВСЕЙ подматрице (i >= k, j >= k)
+        cout << "Ищем главный элемент во всей подматрице.\n";
+        int maxRow = k, maxCol = k;
+        double maxVal = fabs(a[idx(k, k)]);
+        for (int i = k; i < n; i++) {
+            for (int j = k; j < n; j++) {
+                if (fabs(a[idx(i, j)]) > maxVal) {
+                    maxVal = fabs(a[idx(i, j)]);
+                    maxRow = i;
+                    maxCol = j;
+                }
+            }
+        }
 
-        cout << "Максимальный по модулю: a[" << maxRow + 1 << "][" << k + 1
-             << "] = " << a[idx(maxRow, k)] << "\n";
+        cout << "Максимальный по модулю: a[" << maxRow + 1 << "][" << maxCol + 1
+             << "] = " << a[idx(maxRow, maxCol)] << "\n";
 
-        // Перестановка
+        // Перестановка строк
         if (maxRow != k) {
             cout << "Переставляем строки " << k + 1 << " и " << maxRow + 1 << ":\n";
             for (int j = 0; j < m; j++)
                 swap(a[idx(k, j)], a[idx(maxRow, j)]);
             printMatrix(a);
         } else {
-            cout << "Перестановка не требуется.\n\n";
+            cout << "Перестановка строк не требуется.\n";
+        }
+
+        // Перестановка столбцов
+        if (maxCol != k) {
+            cout << "Переставляем столбцы " << k + 1 << " и " << maxCol + 1 << ":\n";
+            for (int i = 0; i < n; i++)
+                swap(a[idx(i, k)], a[idx(i, maxCol)]);
+            // Запоминаем перестановку
+            swap(colOrder[k], colOrder[maxCol]);
+            printMatrix(a);
+        } else {
+            cout << "Перестановка столбцов не требуется.\n\n";
         }
 
         // Нормирование
@@ -74,17 +100,20 @@ void gaussJordan(double a[], double x[]) {
         printMatrix(a);
     }
 
-    for (int i = 0; i < n; i++)
-        x[i] = a[idx(i, n)];
+    // Восстанавливаем порядок неизвестных с учётом перестановок столбцов
+    // a[idx(i, n)] — это значение неизвестного, которое сейчас в столбце i
+    // Но из-за перестановок оно соответствует исходному colOrder[i]
+    for (int i = 0; i < n; i++) {
+        x[colOrder[i]] = a[idx(i, n)];
+    }
 }
 
-// Метод Зейделя
+// Метод Зейделя (без изменений)
 void seidel(const double a[], double x[], double eps) {
     cout << "=== МЕТОД ЗЕЙДЕЛЯ ===\n\n";
     cout << "Система, приведённая к виду с диагональным преобладанием:\n";
     printMatrix(a);
 
-    // --- Проверка условия сходимости ---
     cout << "Проверка условия сходимости ||C||_inf < 1:\n";
     double norm = 0;
     for (int i = 0; i < n; i++) {
@@ -106,7 +135,6 @@ void seidel(const double a[], double x[], double eps) {
     else
         cout << " >= 1 — условие сходимости НЕ выполнено!\n\n";
 
-    // --- Приведение к виду x = Cx + d ---
     cout << "Приведение к виду x = Cx + d:\n";
     for (int i = 0; i < n; i++) {
         cout << "  x" << i + 1 << " = ";
@@ -124,7 +152,6 @@ void seidel(const double a[], double x[], double eps) {
     }
     cout << "\n";
 
-    // --- Начальное приближение ---
     for (int i = 0; i < n; i++) x[i] = 0;
     cout << "Начальное приближение: x = (0, 0, 0)\n\n";
 
@@ -152,7 +179,7 @@ void seidel(const double a[], double x[], double eps) {
             for (int j = 0; j < n; j++) {
                 if (i == j) continue;
                 double c = -a[idx(i, j)] / a[idx(i, i)];
-                double val = (j < i) ? x[j] : x_old[j]; // новые или старые
+                double val = (j < i) ? x[j] : x_old[j];
                 cout << (c >= 0 ? " + " : " - ")
                      << fabs(c) << "*" << val;
                 sum += c * val;
@@ -184,24 +211,29 @@ void seidel(const double a[], double x[], double eps) {
         }
     } while (true);
 }
+
 int main() {
     double a[n * m];
-    cout << "Введите матрицу " << n << "x" << m << ":" << endl;
+    ifstream fin("input.txt");
+    if (!fin.is_open()) {
+        cout << "Ошибка: не удалось открыть файл input.txt" << endl;
+        return 1;
+    }
     for (int i = 0; i < n; i++)
         for (int j = 0; j < m; j++)
-            cin >> a[idx(i, j)];
+            fin >> a[idx(i, j)];
+    fin.close();
 
     double a1[n * m], a2[n * m];
     for (int i = 0; i < n * m; i++) a1[i] = a2[i] = a[i];
 
     double x1[n], x2[n];
-    gaussJordan(a1, x1);
+    gauss(a1, x1);
 
     cout << "Решение (Гаусс): ";
     for (int i = 0; i < n; i++) cout << x1[i] << " ";
     cout << endl;
 
-    // Преобразование системы для сходимости Зейделя
     for (int j = 0; j < m; j++) {
         a2[idx(0, j)] = a[idx(1, j)] + a[idx(2, j)];
         a2[idx(1, j)] = a[idx(0, j)] + a[idx(1, j)];
