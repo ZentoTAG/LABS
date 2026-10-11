@@ -27,17 +27,18 @@ class Matrix:
         type = str()
 
     def __str__(self):
-        print(f"{name} = {data}")
+        return f"{self.name} = {self.data}"
 
 class App():
     def __init__(self):
-        pass
+       pass 
+
 
     def load_from_file(self, name_of_file):
         pass
 
     def manager(self):
-        pass
+        print("success")
     
     def clear(self):
         system("cls" if os_name == "nt" else "clear")
