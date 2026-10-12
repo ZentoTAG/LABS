@@ -31,8 +31,13 @@ class Matrix:
 
 class App():
     def __init__(self):
-       pass 
+       self.matrixes = dict()
 
+    def print_matrix(self, name):
+        print(get_matrix(name))
+
+    def get_matrix(self, name):
+        return self.matrixes.get_value(name)
 
     def load_from_file(self, name_of_file):
         pass
