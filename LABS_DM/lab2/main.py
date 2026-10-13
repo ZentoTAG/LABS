@@ -6,11 +6,11 @@ class Matrix:
         self.data = data
 
     def is_reflexive(self):
-        i = 0
-        for x in self.data:
-            for y in self.data[i]:
-                if not(x==y==1):
-                    return False
+        for i in range(len(self.data)):
+            if self.data[i][i] == 1:
+                continue
+            else:
+                return False
         return True
 
     def is_antireflexive(self):
@@ -32,7 +32,11 @@ class Matrix:
         type = str()
 
     def __str__(self):
-        return f"{self.name} = {self.data}"
+        form_str = str()
+        for i in self.data:
+            form_str += "".join(self.data[i])
+            form_str += "\n"
+        return f"{self.name} = {form_str}"
 
 class App():
     def __init__(self):
