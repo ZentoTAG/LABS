@@ -4,91 +4,121 @@ class Matrix:
     def __init__(self, name, data):
         self.name = name
         self.data = data
+        self.n = len(data)
 
     def is_reflexive(self):
-        for i in range(len(self.data)):
-            if self.data[i][i] == 1:
-                continue
-            else:
-                return False
-        return True
+        return all(self.data[i][i] == 1 for i in range(self.n))
 
     def is_antireflexive(self):
-        pass   
+        return all(self.data[i][i] == 0 for i in range(self.n))
 
     def is_symmetric(self):
-        pass
+        return all(self.data[i][j] == self.data[j][i] 
+                   for i in range(self.n) for j in range(self.n))
 
     def is_antisymmetric(self):
-        pass
+        return all(not (self.data[i][j] == 1 and self.data[j][i] == 1) 
+                   for i in range(self.n) for j in range(self.n) if i != j)
 
     def is_transitive(self):
-        pass
+        return all(self.data[i][k] == 1 
+                   for i in range(self.n) for j in range(self.n) for k in range(self.n) 
+                   if self.data[i][j] == 1 and self.data[j][k] == 1)
 
     def is_connected(self):
-        pass
+        return all(self.data[i][j] == 1 or self.data[j][i] == 1 
+                   for i in range(self.n) for j in range(self.n) if i != j)
 
     def get_type(self):
-        type = str()
+        if self.is_reflexive() and self.is_symmetric() and self.is_transitive():
+            return "Эквивалентность"
+            
+        if self.is_antisymmetric() and self.is_transitive():
+            if self.is_antireflexive():
+                return "Строгий порядок"
+            elif self.is_connected():
+                return "Полный линейный порядок"
+            else:
+                return "Частичный порядок"
+                
+        return "Никакое из перечисленных"
 
     def __str__(self):
-        form_str = str()
-        for i in self.data:
-            form_str += "".join(self.data[i])
-            form_str += "\n"
-        return f"{self.name} = {form_str}"
+        matrix_str = "\n".join(" ".join(map(str, row)) for row in self.data)
+        return f"{self.name}:\n{matrix_str}"
 
-class App():
+
+class App:
     def __init__(self):
-       self.matrixes = dict()
-
-    def print_matrix(self, name):
-        print(self.get_matrix(name))
-
-    def get_matrix(self, name):
-        return self.matrixes[name]
-
-    def get_copy(self, string):
-        return string[::]
+        self.matrixes = {}
 
     def load_from_file(self, name_of_file):
-        with open(f"files/{name_of_file}.txt", "r") as file:
-            lines = file.readlines()
-            for i in range(len(lines)):
-                if "\n" in self.get_copy(lines[i]):
-                    lines[i] = self.get_copy(lines[i]).replace("\n", "", 1)
-                lines[i] = list(map(int, lines[i].split()))
-        return lines
-        
-    def print_info(self):
-        print("""
-              пенис: """)
-    
-    def calc_answer(self):
-        name_of_file = input("введите имя файла: ")
-        self.matrixes[name_of_file] = Matrix(name_of_file, self.load_from_file(name_of_file))
-        if self.matrixes[name_of_file].is_reflexive():
-            print("эта чухня рефлексивна")
+        path = f"files/{name_of_file}.txt"
+        try:
+            with open(path, "r") as file:
+                return [list(map(int, line.split())) for line in file]
+        except FileNotFoundError:
+            print(f"Файл {path} не найден!")
+            return None
 
-        print(self.matrixes[name_of_file])
+    def add_matrix(self):
+        name = input("Введите имя файла (например, m1): ")
+        data = self.load_from_file(name)
+        if data:
+            self.matrixes[name] = Matrix(name, data)
+            print(f"Матрица {name} успешно загружена.")
+        input("Нажмите Enter...")
+
+    def print_report(self, matrix):
+        print(matrix)
+        print(f"Рефлексивность:      {'Да' if matrix.is_reflexive() else 'Нет'}")
+        print(f"Антирефлексивность:  {'Да' if matrix.is_antireflexive() else 'Нет'}")
+        print(f"Симметричность:      {'Да' if matrix.is_symmetric() else 'Нет'}")
+        print(f"Антисимметричность:  {'Да' if matrix.is_antisymmetric() else 'Нет'}")
+        print(f"Транзитивность:      {'Да' if matrix.is_transitive() else 'Нет'}")
+        print(f"Связность:           {'Да' if matrix.is_connected() else 'Нет'}")
+        print(f"ТИП:                 {matrix.get_type()}\n")
+
+    def analyze_one(self):
+        name = input("Введите имя матрицы: ")
+        if name in self.matrixes:
+            self.print_report(self.matrixes[name])
+        else:
+            print("Матрица не найдена!")
+        input("Нажмите Enter...")
+
+    def analyze_all(self):
+        if not self.matrixes:
+            print("Сначала загрузите матрицы!")
+        else:
+            for matrix in self.matrixes.values():
+                self.print_report(matrix)
+                print("-" * 30)
+        input("Нажмите Enter...")
 
     def manager(self):
         while True:
             self.clear()
-            self.print_info()
-            choice = input("действие: ")
+            print("""
+=== ЛАБОРАТОРНАЯ РАБОТА 2: СВОЙСТВА ОТНОШЕНИЙ ===
+1 - Загрузить матрицу из файла
+2 - Анализ одной матрицы
+3 - Анализ всех загруженных матриц
+0 - Выход
+""")
+            choice = input("Действие: ")
             match choice:
-                case "0":
-                    break
-                case "1":
-                    self.calc_answer()
+                case "0": break
+                case "1": self.add_matrix()
+                case "2": self.analyze_one()
+                case "3": self.analyze_all()
                 case _:
-                    print("неверный ввод")
-            input()
+                    print("Неверный ввод!")
+                    input("Нажмите Enter...")
 
     def clear(self):
         system("cls" if os_name == "nt" else "clear")
 
+
 app = App()
 app.manager()
-
