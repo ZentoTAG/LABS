@@ -69,7 +69,6 @@ class App:
             print(f"Матрица {name} успешно загружена.")
         input("Нажмите Enter...")
 
-    # --- НОВЫЙ МЕТОД ЗАГРУЗКИ ВСЕХ МАТРИЦ ---
     def load_all_matrices(self):
         if not os.path.exists("files"):
             print("Папка 'files' не найдена!")
