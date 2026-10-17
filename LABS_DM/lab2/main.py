@@ -1,4 +1,4 @@
-from os import system, name as os_name
+import os
 
 class Matrix:
     def __init__(self, name, data):
@@ -69,6 +69,25 @@ class App:
             print(f"Матрица {name} успешно загружена.")
         input("Нажмите Enter...")
 
+    # --- НОВЫЙ МЕТОД ЗАГРУЗКИ ВСЕХ МАТРИЦ ---
+    def load_all_matrices(self):
+        if not os.path.exists("files"):
+            print("Папка 'files' не найдена!")
+            input("Нажмите Enter...")
+            return
+
+        files = [f for f in os.listdir("files") if f.endswith(".txt")]
+        if not files:
+            print("В папке 'files' нет текстовых файлов!")
+        else:
+            for file in files:
+                name = file.replace(".txt", "")
+                data = self.load_from_file(name)
+                if data:
+                    self.matrixes[name] = Matrix(name, data)
+            print(f"Успешно загружено матриц: {len(files)}")
+        input("Нажмите Enter...")
+
     def print_report(self, matrix):
         print(matrix)
         print(f"Рефлексивность:      {'Да' if matrix.is_reflexive() else 'Нет'}")
@@ -101,23 +120,25 @@ class App:
             self.clear()
             print("""
 === ЛАБОРАТОРНАЯ РАБОТА 2: СВОЙСТВА ОТНОШЕНИЙ ===
-1 - Загрузить матрицу из файла
-2 - Анализ одной матрицы
-3 - Анализ всех загруженных матриц
+1 - Загрузить одну матрицу из файла
+2 - Загрузить все матрицы из папки
+3 - Анализ одной матрицы
+4 - Анализ всех загруженных матриц
 0 - Выход
 """)
             choice = input("Действие: ")
             match choice:
                 case "0": break
                 case "1": self.add_matrix()
-                case "2": self.analyze_one()
-                case "3": self.analyze_all()
+                case "2": self.load_all_matrices()
+                case "3": self.analyze_one()
+                case "4": self.analyze_all()
                 case _:
                     print("Неверный ввод!")
                     input("Нажмите Enter...")
 
     def clear(self):
-        system("cls" if os_name == "nt" else "clear")
+        os.system("cls" if os.name == "nt" else "clear")
 
 
 app = App()
