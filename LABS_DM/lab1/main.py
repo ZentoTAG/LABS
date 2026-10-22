@@ -1,4 +1,5 @@
 # Lab_1 Тагиров Вадим ИВТ-25-1б
+import cProfile
 import random
 import os
 
@@ -338,7 +339,7 @@ class Calculator:
         os.system("cls" if os.name == "nt" else "clear")
                         
 calc = Calculator()
-calc.manager()
+cProfile.run("calc.manager()")
 
     
 
