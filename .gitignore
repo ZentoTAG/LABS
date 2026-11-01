@@ -1,0 +1,80 @@
+# ---------- Python ----------
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# ---------- Virtual envs ----------
+.venv/
+venv/
+env/
+ENV/
+.python-version
+
+# ---------- PyInstaller ----------
+*.spec.bak
+build/
+dist/
+
+# ---------- Jupyter ----------
+.ipynb_checkpoints/
+*.ipynb_checkpoints
+
+# ---------- Тесты / coverage ----------
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.nox/
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+.hypothesis/
+
+# ---------- Типизация / линтеры ----------
+.mypy_cache/
+.dmypy.json
+dmypy.json
+.ruff_cache/
+.pyre/
+.pytype/
+
+# ---------- Редакторы ----------
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.\#*
+\#*\#
+*.sublime-workspace
+*.sublime-project
+
+# ---------- OS ----------
+.DS_Store
+Thumbs.db
+desktop.ini
+*.lnk
+
+# ---------- Временные файлы Office (только lock-файлы) ----------
+~$*
+*.tmp
