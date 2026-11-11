@@ -1,5 +1,6 @@
 import os
 
+
 class BoolFunction:
     def __init__(self, name, vector):
         self.name = name
@@ -10,124 +11,169 @@ class BoolFunction:
             self.vars_count += 1
         self.vars = [chr(97 + i) for i in range(self.vars_count)]
 
+    # терм вида "10-" превращаем в строку "a¬c"
+    def term_to_str(self, term):
+        res = ""
+        for i in range(len(term)):
+            if term[i] == '1':
+                res += self.vars[i]
+            elif term[i] == '0':
+                res += "¬" + self.vars[i]
+        if res == "":
+            res = "1"
+        return res
+
     def print_truth_table(self):
         print(f"\n--- Таблица истинности для {self.name} ---")
         print(" | ".join(self.vars) + " | F")
         print("-" * (4 * self.vars_count + 5))
-        
+
         for i in range(self.n):
             binary_str = bin(i)[2:].zfill(self.vars_count)
-            
-            # Разбиваем строку на отдельные символы и выводим
             row = list(binary_str)
             print(" | ".join(row) + f" | {self.vector[i]}")
-            
+
     def get_sdnf(self):
         print("\n--- СДНФ ---")
-        self.sdnf_terms = []
-        
+        sdnf = []
+
         for i in range(self.n):
             if self.vector[i] == '1':
-                term = []
-                binary_str = bin(i)[2:].zfill(self.vars_count)
-                
-                for j in range(self.vars_count):
-                    bit = binary_str[j]
-                    var_name = self.vars[j]
-                    if bit == '1':
-                        term.append(var_name)
-                    else:
-                        term.append("¬" + var_name)
-                self.sdnf_terms.append(term)
-        
-        if not self.sdnf_terms:
+                sdnf.append(bin(i)[2:].zfill(self.vars_count))
+
+        if not sdnf:
             print("Функция равна 0 (пустая СДНФ)")
             return []
-        
-        print(" ∨ ".join(["".join(t) for t in self.sdnf_terms]))
-        return self.sdnf_terms
-        
-    def find_implicants(self, terms):
-        print("\n--- импликанты ---")
-        if len(terms) <= 1:
-            print("Склеивать нечего.")
-            return terms
 
-        implicants = []
-        
-        for i in range(len(terms)):
-            for j in range(i + 1, len(terms)):
-                t1 = terms[i]
-                t2 = terms[j]
-                diff = 0
-                diff_idx = -1
-                
-                for k in range(len(t1)):
-                    if t1[k] != t2[k]:
-                        diff += 1
-                        diff_idx = k
-                
-                if diff == 1:
-                    if t1[diff_idx] == "¬" + t2[diff_idx] or "¬" + t1[diff_idx] == t2[diff_idx]:
-                        new_term = t1.copy()
-                        new_term[diff_idx] = '-'
-                        if new_term not in implicants:
-                            implicants.append(new_term)
-        
-        if not implicants:
-            print("Нет склеивающихся термов.")
-        else:
-            print(" ∨ ".join(["".join(t) for t in implicants]))
-        return implicants
+        print(" ∨ ".join([self.term_to_str(t) for t in sdnf]))
+        return sdnf
 
-    def print_implicant_matrix(self, sdnf_terms, implicants):
+    # склеиваем два терма, если они отличаются ровно в одной позиции
+    # возвращает новый терм
+    def glue(self, t1, t2):
+        diff = 0
+        idx = -1
+        for k in range(len(t1)):
+            if t1[k] != t2[k]:
+                if t1[k] == '-' or t2[k] == '-':
+                    return None
+                diff += 1
+                idx = k
+        if diff != 1:
+            return None
+        return t1[:idx] + '-' + t1[idx + 1:]
+
+    def find_implicants(self, sdnf):
+        print("\n--- Неполные склеивания ---")
+        prime = []        # простые импликанты
+        current = sdnf
+        step = 1
+
+        while len(current) > 0:
+            used = [False] * len(current)
+            new_terms = []
+
+            for i in range(len(current)):
+                for j in range(i + 1, len(current)):
+                    g = self.glue(current[i], current[j])
+                    if g is not None:
+                        used[i] = True
+                        used[j] = True
+                        if g not in new_terms:
+                            new_terms.append(g)
+
+            for i in range(len(current)):
+                if not used[i] and current[i] not in prime:
+                    prime.append(current[i])
+
+            print(f"\nШаг {step}:")
+            if new_terms:
+                print(" ∨ ".join([self.term_to_str(t) for t in new_terms]))
+            else:
+                print("Склеивать больше нечего.")
+
+            current = new_terms
+            step += 1
+
+        print("\nСокращённая ДНФ:")
+        print(" ∨ ".join([self.term_to_str(t) for t in prime]))
+        return prime
+
+    # покрывает ли импликанта терм СДНФ
+    def is_covered(self, imp, term):
+        for k in range(len(imp)):
+            if imp[k] != '-' and imp[k] != term[k]:
+                return False
+        return True
+
+    def print_implicant_matrix(self, sdnf, implicants):
         print("\n--- Импликантная матрица ---")
-        if not implicants:
-            return
 
-        header = f"{'':<8} | "
-        for t in sdnf_terms:
-            header += f"{''.join(t):<8} | "
+        header = f"{'':<10} | "
+        for t in sdnf:
+            header += f"{self.term_to_str(t):<10} | "
         print(header)
         print("-" * len(header))
 
         for imp in implicants:
-            row = f"{''.join(imp):<8} | "
-            for t in sdnf_terms:
-                is_covered = True
-                for k in range(len(imp)):
-                    if imp[k] != '-' and imp[k] != t[k]:
-                        is_covered = False
-                        break
-                row += f"{'+' if is_covered else ' ':<8} | "
+            row = f"{self.term_to_str(imp):<10} | "
+            for t in sdnf:
+                if self.is_covered(imp, t):
+                    row += f"{'+':<10} | "
+                else:
+                    row += f"{'':<10} | "
             print(row)
 
-    def get_mdnf(self, implicants, sdnf_terms):
+    def get_mdnf(self, sdnf, implicants):
         print("\n--- МДНФ ---")
-        if not implicants:
-            print(" ∨ ".join(["".join(t) for t in sdnf_terms]))
-            return
-            
-        essential = []
-        for t in sdnf_terms:
+
+        # терм СДНФ, который покрывает только одна импликанта
+        core = []
+        for t in sdnf:
             covered_by = []
             for imp in implicants:
-                is_covered = True
-                for k in range(len(imp)):
-                    if imp[k] != '-' and imp[k] != t[k]:
-                        is_covered = False
-                        break
-                if is_covered:
+                if self.is_covered(imp, t):
                     covered_by.append(imp)
-            
-            if len(covered_by) == 1:
-                if covered_by[0] not in essential:
-                    essential.append(covered_by[0])
-                
-        if not essential:
-            essential = implicants
-            
-        print(" ∨ ".join(["".join(t) for t in essential]))
+            if len(covered_by) == 1 and covered_by[0] not in core:
+                core.append(covered_by[0])
+
+        # какие термы ядро не покрыло
+        left_terms = []
+        for t in sdnf:
+            ok = False
+            for c in core:
+                if self.is_covered(c, t):
+                    ok = True
+            if not ok:
+                left_terms.append(t)
+
+        # остальные импликанты перебором, самый короткий набор
+        others = [imp for imp in implicants if imp not in core]
+        best = []
+        best_len = 10 ** 9
+        if left_terms:
+            for mask in range(1, 2 ** len(others)):
+                chosen = []
+                for i in range(len(others)):
+                    if mask & (1 << i):
+                        chosen.append(others[i])
+                if len(chosen) >= best_len:
+                    continue
+                all_ok = True
+                for t in left_terms:
+                    ok = False
+                    for imp in chosen:
+                        if self.is_covered(imp, t):
+                            ok = True
+                    if not ok:
+                        all_ok = False
+                        break
+                if all_ok:
+                    best = chosen
+                    best_len = len(chosen)
+
+        result = core + best
+        print(" ∨ ".join([self.term_to_str(t) for t in result]))
 
 
 class App:
@@ -135,14 +181,14 @@ class App:
         self.functions = {}
 
     def add_function(self):
-        name = input("Имя функции:: ")
-        vector_input = input("Вектор функции: ").strip()
-        
+        name = input("Имя функции: ")
+        vector_input = input("Вектор функции: ").replace(" ", "")
+
         if not all(c in '01' for c in vector_input):
             print("Ошибка: вектор должен состоять только из 0 и 1!")
             input("Нажмите Enter...")
             return
-            
+
         if len(vector_input) not in [2, 4, 8, 16, 32]:
             print("Ошибка: длина вектора должна быть степенью двойки!")
             input("Нажмите Enter...")
@@ -165,18 +211,20 @@ class App:
             return
 
         func = self.functions[name]
-        
-        # Вывод вектора функции в начале
-        print(f"\nВектор функции {func.name}: {func.vector}")
-        
+
+        # вектор выводим по 4 знака через пробел
+        v = func.vector
+        groups = [v[i:i + 4] for i in range(0, len(v), 4)]
+        print(f"\nВектор функции {func.name}: {' '.join(groups)}")
+
         func.print_truth_table()
         sdnf = func.get_sdnf()
-        
+
         if sdnf:
             implicants = func.find_implicants(sdnf)
             func.print_implicant_matrix(sdnf, implicants)
-            func.get_mdnf(implicants, sdnf)
-            
+            func.get_mdnf(sdnf, implicants)
+
         input("\nНажмите Enter...")
 
     def manager(self):
