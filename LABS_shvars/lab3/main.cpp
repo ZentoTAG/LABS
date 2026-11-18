@@ -3,10 +3,10 @@
 #include <vector>
 using namespace std;
 
-// Метод прогонки для системы a[i]*x[i-1] + b[i]*x[i] + c[i]*x[i+1] = d[i]
+// Метод прогонки для системы
 // (a[0] = 0, c[n-1] = 0)
-vector<double> thomas(const vector<double>& a, const vector<double>& b,
-                      const vector<double>& c, const vector<double>& d) {
+vector<double> progonka(const vector<double>& a, const vector<double>& b,
+                        const vector<double>& c, const vector<double>& d) {
     int n = b.size();
     vector<double> p(n), q(n), x(n);
 
@@ -36,7 +36,7 @@ int main() {
     vector<double> h(n - 1);
     for (int i = 0; i < n - 1; i++) h[i] = x[i + 1] - x[i];
 
-    // Система (2.7) для m_i (вторые производные в узлах), m_0 = m_{n-1} = 0
+    // Система для m_i, m_0 = m_{n-1} = 0
     vector<double> A(n, 0), B(n, 0), C(n, 0), D(n, 0);
     B[0] = 1;                       // m_0 = 0
     B[n - 1] = 1;                   // m_{n-1} = 0
@@ -48,9 +48,9 @@ int main() {
         D[i] = 6.0 / (h[i] + h[i - 1]) *
                ((y[i + 1] - y[i]) / h[i] - (y[i] - y[i - 1]) / h[i - 1]);
     }
-    vector<double> m = thomas(A, B, C, D);
+    vector<double> m = progonka(A, B, C, D);
 
-    // Коэффициенты сплайна (2.3): S_i(x) = a + b*t + c*t^2 + d*t^3, t = x - x_i
+    // Коэффициенты сплайна S_i(x) = a + b*t + c*t^2 + d*t^3, t = x - x_i
     vector<double> a(n - 1), b(n - 1), c(n - 1), d(n - 1);
     for (int i = 0; i < n - 1; i++) {
         a[i] = y[i];

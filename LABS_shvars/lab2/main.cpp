@@ -55,7 +55,7 @@ void chord(double a, double b, double& x, int& n) {
     }
 }
 
-// 3. Метод Ньютона (универсальный)
+// 3. Метод Ньютона
 void newton(double a, double b, double& x, int& n) {
     n = 0;
     double x_curr;
